@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class AccountTests(APITestCase):
+class BaseTests(APITestCase):
     REGISTER_URL = reverse('member:register')
     REGISTER_SAMPLE = {
         'email': "proberto.macedo@gmail.com",
@@ -18,6 +18,28 @@ class AccountTests(APITestCase):
         'first_name': "Paulo",
         'last_name': "Developer",
     }
+
+
+class VerifyTests(BaseTests):
+
+    def test_verify(self):
+        user = User.objects.create(email="proberto.macedo@gmail.com")
+        url = reverse("member:verify", args=(user.pk, ))
+        response = self.client.put(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'verified': True})
+
+    def test_verify_validate_already_verified(self):
+        """ Quite unecessary since this doesn't change anything, but just to
+        ilustrate the VerifyView queryset validated. """
+        user = User.objects.create(email="proberto.macedo@gmail.com",
+                                   verified=True)
+        url = reverse("member:verify", args=(user.pk, ))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class RegisterTests(BaseTests):
 
     # def test_register_validate_required_fields(self):
     #     data = self.REGISTER_SAMPLE.copy()
