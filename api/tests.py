@@ -19,9 +19,36 @@ class AccountTests(APITestCase):
         'last_name': "Developer",
     }
 
+    # def test_register_validate_required_fields(self):
+    #     data = self.REGISTER_SAMPLE.copy()
+    #     data = dict.fromkeys(data.keys(), '')
+    #     response = self.client.post(self.REGISTER_URL, data)
+    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    #     self.assertEqual(
+    #         response.data,
+    #         {'email': ['This field may not be blank.'],
+    #          'first_name': ['This field may not be blank.'],
+    #          'last_name': ['This field may not be blank.'],
+    #          'password': ['This field may not be blank.'],
+    #          'repeat_password': ['This field may not be blank.']})
+
+    def test_register_validate_repeat_password(self):
+        data = self.REGISTER_SAMPLE.copy()
+        data.update({'repeat_password': 'invalid'})
+        response = self.client.post(self.REGISTER_URL, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data,
+            {'repeat_password': ["Repeated password doesn't match."]})
+
     def test_register(self):
         response = self.client.post(self.REGISTER_URL, self.REGISTER_SAMPLE)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(
+            response.data,
+            {'email': 'proberto.macedo@gmail.com',
+             'first_name': 'Paulo',
+             'last_name': 'Developer'})
 
         qs = User.objects.all()
         self.assertQuerysetEqual(qs, ['<User: proberto.macedo@gmail.com>'])

@@ -1,5 +1,6 @@
 from django.contrib.auth.hashers import make_password
 
+from rest_framework.serializers import ValidationError
 from rest_framework import serializers
 
 from django.contrib.auth import get_user_model
@@ -21,8 +22,17 @@ class UserSerializer(serializers.ModelSerializer):
             'password',
             'repeat_password',
         )
-        read_only_fields = ("password", )
-        # extra_kwargs = {'password': {'write_only': True}}
+        # read_only_fields = ("password", )
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'repeat_password': {'write_only': True},
+        }
+
+    def validate(self, data):
+        if data['repeat_password'] != data['password']:
+            raise ValidationError(
+                {'repeat_password': "Repeated password doesn't match."})
+        return data
 
     def create(self, data):
         if data.get('password'):
