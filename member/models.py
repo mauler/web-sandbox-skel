@@ -1,12 +1,15 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
+from .managers import UserManager
+
 
 class Team(models.Model):
     name = models.CharField(max_length=200)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    objects = UserManager()
     team = models.ForeignKey("Team", null=True, blank=True,
                              related_name="members")
 
