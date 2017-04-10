@@ -1,7 +1,7 @@
 from django.urls import reverse
 
-from rest_framework import status
 from rest_framework.test import APITestCase
+from rest_framework import status
 
 from django.contrib.auth import get_user_model
 
@@ -18,6 +18,26 @@ class BaseTests(APITestCase):
         'first_name': "Paulo",
         'last_name': "Developer",
     }
+
+
+class LoginTests(BaseTests):
+    LOGIN_URL = reverse('member:login')
+    LOGIN_SAMPLE = {
+        "email:": "proberto.macedo@gmail.com",
+        "password:": "pwd1234",
+    }
+
+    def setUp(self):
+        self.user = User.objects.create(email="proberto.macedo@gmail.com")
+        self.user.set_password('pwd1234')
+        self.user.save(update_fields=['password'])
+
+    def test_login(self):
+        response = self.client.post(
+            self.LOGIN_URL,
+            self.LOGIN_SAMPLE.copy())
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {})
 
 
 class VerifyTests(BaseTests):
