@@ -14,24 +14,40 @@ from .models import Team
 from .forms import PasswordResetForm
 from .serializers import UserSerializer, UserVerifySerializer, \
     ChangePasswordSerializer, LoginSerializer, ResetSerializer, \
-    ResetChangePasswordSerializer, TeamSerializer
+    ResetChangePasswordSerializer, TeamSerializer, InviteSerializer
 
 
 User = get_user_model()
 
 
 class InviteView(APIView):
+    """
+    get:
+    Return authenticated user invite code to others register and join the team.
+    """
     permission_classes = (IsAuthenticated, )
+    serializer_class = InviteSerializer
 
     def get(self, request, *args, **kwargs):
+        """
+        Returns logged user invite code to be used on user registration.
+        """
         uidb64 = urlsafe_base64_encode(force_bytes(request.user.pk)).decode()
-        data = {
+        serializer = self.serializer_class(data={
             'invite_code': uidb64,
-        }
-        return Response(data, status=status.HTTP_200_OK)
+        })
+        assert serializer.is_valid()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TeamViewSet(viewsets.ModelViewSet):
+    """
+    retrieve:
+    Return the logged user current team.
+
+    post:
+    Create a new team and associate it for the current user.
+    """
     permission_classes = (IsAuthenticated, )
     serializer_class = TeamSerializer
     queryset = Team.objects.all()
@@ -54,6 +70,11 @@ class TeamViewSet(viewsets.ModelViewSet):
 
 
 class ResetChangePasswordView(APIView):
+    """
+    post:
+    Changes unauthenticated user password using a token and uid previously
+    sent by email.
+    """
     def post(self, request, *args, **kwargs):
         serializer = ResetChangePasswordSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
@@ -72,6 +93,10 @@ class ResetChangePasswordView(APIView):
 
 
 class ResetView(APIView):
+    """
+    post:
+    Emails user reset link with token and uid encoded.
+    """
     def post(self, request, *args, **kwargs):
         serializer = ResetSerializer(data=self.request.data)
         if serializer.is_valid(raise_exception=True):
@@ -86,6 +111,10 @@ class ResetView(APIView):
 
 
 class ChangePasswordView(APIView):
+    """
+    put:
+    Changes authenticated user password.
+    """
     permission_classes = (IsAuthenticated, )
 
     def get_object(self):
@@ -106,6 +135,10 @@ class ChangePasswordView(APIView):
 
 
 class LoginView(APIView):
+    """
+    post:
+    Authenticate on the system.
+    """
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=self.request.data)
         if serializer.is_valid(raise_exception=True):
@@ -118,10 +151,21 @@ class LoginView(APIView):
 
 
 class VerifyView(generics.RetrieveUpdateAPIView):
+    """
+    put:
+    Verify a user.
+
+    get:
+    Check user verified status.
+    """
     queryset = User.objects.filter(verified=False)
     serializer_class = UserVerifySerializer
 
 
 class UserCreateView(generics.CreateAPIView):
+    """
+    post:
+    Register a new user.
+    """
     queryset = User.objects.all()
     serializer_class = UserSerializer

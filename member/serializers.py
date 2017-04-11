@@ -12,6 +12,10 @@ from .models import Team
 User = get_user_model()
 
 
+class InviteSerializer(serializers.Serializer):
+    invite_code = serializers.CharField()
+
+
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
@@ -111,7 +115,6 @@ class UserSerializer(serializers.ModelSerializer):
             user_pk = urlsafe_base64_decode(value)
             qs = User.objects.filter(pk=user_pk)
         except ValueError:
-            # return None
             raise ValidationError("Invalid invite code.")
         else:
             if not qs.exists():
