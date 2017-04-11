@@ -8,7 +8,7 @@ services:
 
     working_dir: /Src
 
-    command: sh -c "pip3 intall -r requirements.txt && gunicorn project.wsgi --log-file -"
+    command: sh -c "pip3 install -r requirements.txt && gunicorn project.wsgi -b 0.0.0.0:8055 --log-file -"
 
     ports:
      - "8055:8055"
