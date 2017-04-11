@@ -97,22 +97,6 @@ class PasswordTests(APITestCase):
             response.data,
             {'detail': 'Authentication credentials were not provided.'})
 
-    # def test_reset_needs_authentication(self):
-    #     user = User.objects.create(email="proberto.macedo@gmail.com")
-    #     url = reverse("member:verify", args=(user.pk, ))
-    #     response = self.client.put(url)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.data, {'verified': True})
-
-    # def test_verify_validate_already_verified(self):
-    #     """ Quite unecessary since this doesn't change anything, but just to
-    #     ilustrate the VerifyView queryset validated. """
-    #     user = User.objects.create(email="proberto.macedo@gmail.com",
-    #                                verified=True)
-    #     url = reverse("member:verify", args=(user.pk, ))
-    #     response = self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
 
 class LoginTests(APITestCase):
     LOGIN_URL = reverse('member:login')
@@ -164,19 +148,6 @@ class RegisterTests(APITestCase):
         'first_name': "Paulo",
         'last_name': "Developer",
     }
-
-    # def test_register_validate_required_fields(self):
-    #     data = self.REGISTER_SAMPLE.copy()
-    #     data = dict.fromkeys(data.keys(), '')
-    #     response = self.client.post(self.REGISTER_URL, data)
-    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-    #     self.assertEqual(
-    #         response.data,
-    #         {'email': ['This field may not be blank.'],
-    #          'first_name': ['This field may not be blank.'],
-    #          'last_name': ['This field may not be blank.'],
-    #          'password': ['This field may not be blank.'],
-    #          'repeat_password': ['This field may not be blank.']})
 
     def test_register_validate_repeat_password(self):
         data = self.REGISTER_SAMPLE.copy()

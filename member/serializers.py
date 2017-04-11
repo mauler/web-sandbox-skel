@@ -90,7 +90,6 @@ class UserSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {
             'password': {'write_only': True},
-            # 'repeat_password': {'write_only': True},
         }
 
     def validate(self, data):
