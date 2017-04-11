@@ -10,6 +10,17 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    repeat_password = serializers.CharField()
+
+    def validate(self, data):
+        if data['repeat_password'] != data['password']:
+            raise ValidationError(
+                {'repeat_password': "Repeated password doesn't match."})
+        return data
+
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
@@ -36,9 +47,12 @@ class UserVerifySerializer(serializers.ModelSerializer):
         return instance
 
 
-class UserSerializer(ChangePasswordSerializer):
+class UserSerializer(serializers.ModelSerializer):
+    repeat_password = serializers.CharField(max_length=128,
+                                            write_only=True)
 
-    class Meta(ChangePasswordSerializer.Meta):
+    class Meta:
+        model = User
         fields = (
             'email',
             'first_name',
@@ -46,10 +60,15 @@ class UserSerializer(ChangePasswordSerializer):
             'password',
             'repeat_password',
         )
+        extra_kwargs = {
+            'password': {'write_only': True},
+            # 'repeat_password': {'write_only': True},
+        }
 
-    # def create(self, data):
-    #     if data.get('password'):
-    #         data['password'] = make_password(data['password'])
-
-    #     data.pop("repeat_password")
-    #     return super().create(data)
+    def validate(self, data):
+        if data['repeat_password'] != data['password']:
+            raise ValidationError(
+                {'repeat_password': "Repeated password doesn't match."})
+        data.pop('repeat_password')
+        data['password'] = make_password(data['password'])
+        return data

@@ -14,6 +14,26 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ChangePasswordView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def get_object(self):
+        return self.request.user
+
+    def put(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = ChangePasswordSerializer(
+            data=request.data)
+
+        if serializer.is_valid():
+            user.set_password(serializer.data["password"])
+            user.save(update_fields=['password'])
+            return Response({}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=self.request.data)

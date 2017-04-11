@@ -1,3 +1,4 @@
+from django.contrib.auth import authenticate
 from django.urls import reverse
 
 from rest_framework.test import APITestCase
@@ -9,18 +10,62 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-class BaseTests(APITestCase):
-    REGISTER_URL = reverse('member:register')
-    REGISTER_SAMPLE = {
-        'email': "proberto.macedo@gmail.com",
-        'password': "register1234",
-        'repeat_password': "register1234",
-        'first_name': "Paulo",
-        'last_name': "Developer",
+class PasswordTests(APITestCase):
+    CHANGE_PASSWORD_URL = reverse('member:change_password')
+    RESET_PASSWORD_URL = reverse('member:change_password')
+    PASSWORD_SAMPLE = {
+        "password": "change1234",
+        "repeat_password": "change1234",
     }
 
+    def setUp(self):
+        self.user = User.objects.create(email="proberto.macedo@gmail.com")
 
-class LoginTests(BaseTests):
+    def test_change_password(self):
+        self.client.force_login(self.user)
+        response = self.client.put(
+            self.CHANGE_PASSWORD_URL,
+            self.PASSWORD_SAMPLE.copy())
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {})
+        self.assertIsNotNone(authenticate(
+            email="proberto.macedo@gmail.com",
+            password='change1234'))
+
+    def test_password_change_unauthenticated(self):
+        response = self.client.put(
+            self.CHANGE_PASSWORD_URL,
+            self.PASSWORD_SAMPLE.copy())
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data,
+            {'detail': 'Authentication credentials were not provided.'})
+
+    # def test_reset_needs_authentication(self):
+    #     user = User.objects.create(email="proberto.macedo@gmail.com")
+    #     url = reverse("member:verify", args=(user.pk, ))
+    #     response = self.client.put(url)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.data, {'verified': True})
+
+    # def test_reset(self):
+    #     user = User.objects.create(email="proberto.macedo@gmail.com")
+    #     url = reverse("member:verify", args=(user.pk, ))
+    #     response = self.client.put(url)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertEqual(response.data, {'verified': True})
+
+    # def test_verify_validate_already_verified(self):
+    #     """ Quite unecessary since this doesn't change anything, but just to
+    #     ilustrate the VerifyView queryset validated. """
+    #     user = User.objects.create(email="proberto.macedo@gmail.com",
+    #                                verified=True)
+    #     url = reverse("member:verify", args=(user.pk, ))
+    #     response = self.client.get(url)
+    #     self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class LoginTests(APITestCase):
     LOGIN_URL = reverse('member:login')
     LOGIN_SAMPLE = {
         "email:": "proberto.macedo@gmail.com",
@@ -40,7 +85,7 @@ class LoginTests(BaseTests):
         self.assertEqual(response.data, {})
 
 
-class VerifyTests(BaseTests):
+class VerifyTests(APITestCase):
 
     def test_verify(self):
         user = User.objects.create(email="proberto.macedo@gmail.com")
@@ -59,7 +104,15 @@ class VerifyTests(BaseTests):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
-class RegisterTests(BaseTests):
+class RegisterTests(APITestCase):
+    REGISTER_URL = reverse('member:register')
+    REGISTER_SAMPLE = {
+        'email': "proberto.macedo@gmail.com",
+        'password': "register1234",
+        'repeat_password': "register1234",
+        'first_name': "Paulo",
+        'last_name': "Developer",
+    }
 
     # def test_register_validate_required_fields(self):
     #     data = self.REGISTER_SAMPLE.copy()
