@@ -2,5 +2,5 @@ from django.conf.urls import include, url
 
 
 urlpatterns = [
-    url("", include("member.urls", namespace="member")),
+    url("^v1/members/", include("member.urls", namespace="member")),
 ]

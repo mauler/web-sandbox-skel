@@ -5,15 +5,20 @@ from .views import UserCreateView, VerifyView, ChangePasswordView, LoginView
 
 urlpatterns = [
 
-    url(r'^v1/login$',
+    url(r'^login$',
         LoginView.as_view(),
         name='login'),
 
-    url(r'^v1/password$',
+    url(r'^change-password$',
         ChangePasswordView.as_view(),
         name='change_password'),
 
-    url(r'^v1/register$', UserCreateView.as_view(), name="register"),
-    url(r'^v1/verify/(?P<pk>\d+)$', VerifyView.as_view(), name='verify'),
+    url(r'^register$',
+        UserCreateView.as_view(),
+        name="register"),
+
+    url(r'^verify/(?P<pk>\d+)$',
+        VerifyView.as_view(),
+        name='verify'),
 
 ]
