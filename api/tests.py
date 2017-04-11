@@ -1,5 +1,8 @@
+from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate
 from django.urls import reverse
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -8,6 +11,36 @@ from django.contrib.auth import get_user_model
 
 
 User = get_user_model()
+
+
+class ResetChangePasswordTests(APITestCase):
+    RESET_CHANGE_PASSWORD_URL = reverse('member:reset_change_password')
+
+    def setUp(self):
+        self.user = User.objects.create(email="proberto.macedo@gmail.com")
+        self.user.set_unusable_password()
+        self.user.save(update_fields=['password'])
+        self.uid = urlsafe_base64_encode(force_bytes(self.user.pk)).decode()
+        self.token = default_token_generator.make_token(self.user)
+
+    def test_reset(self):
+        data = {
+            "uidb64": self.uid,
+            "token": self.token,
+            "password": "new12345",
+            "repeat_password": "new12345",
+        }
+        response = self.client.post(
+            self.RESET_CHANGE_PASSWORD_URL,
+            data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {})
+        user = User.objects.get(pk=self.user.pk)
+        self.assertTrue(
+            user.has_usable_password())
+        self.assertIsNotNone(authenticate(
+            email="proberto.macedo@gmail.com",
+            password=data['password']))
 
 
 class ResetTests(APITestCase):
@@ -84,12 +117,14 @@ class PasswordTests(APITestCase):
 class LoginTests(APITestCase):
     LOGIN_URL = reverse('member:login')
     LOGIN_SAMPLE = {
-        "email:": "proberto.macedo@gmail.com",
-        "password:": "pwd1234",
+        "email": "proberto.macedo@gmail.com",
+        "password": "pwd1234",
     }
 
     def setUp(self):
-        self.user = User.objects.create(email="proberto.macedo@gmail.com")
+        self.user = User.objects.create(
+            email="proberto.macedo@gmail.com",
+            verified=True)
         self.user.set_password('pwd1234')
         self.user.save(update_fields=['password'])
 

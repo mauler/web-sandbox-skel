@@ -1,4 +1,5 @@
-from django.contrib.auth import login
+from django.contrib.auth.forms import SetPasswordForm
+from django.contrib.auth import login, get_user_model
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -7,24 +8,41 @@ from rest_framework import generics, status
 
 from .forms import PasswordResetForm
 from .serializers import UserSerializer, UserVerifySerializer, \
-    ChangePasswordSerializer, LoginSerializer, ResetSerializer
-
-from django.contrib.auth import get_user_model
+    ChangePasswordSerializer, LoginSerializer, ResetSerializer, \
+    ResetChangePasswordSerializer
 
 
 User = get_user_model()
 
 
-class ResetView(APIView):
+class ResetChangePasswordView(APIView):
     def post(self, request, *args, **kwargs):
-        serializer = ResetSerializer(data=self.request.data)
-        if serializer.is_valid():
-            form = PasswordResetForm(data=serializer.data)
-            form.is_valid()
+        serializer = ResetChangePasswordSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            form = SetPasswordForm(
+                user=User.objects.get(pk=serializer.validated_data['user_pk']),
+                data={
+                    'new_password1': serializer.validated_data['password'],
+                    'new_password2': serializer.validated_data['password']})
+            assert form.is_valid()
             form.save()
             data = {}
         else:
             data = serializer.data
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class ResetView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = ResetSerializer(data=self.request.data)
+        if serializer.is_valid(raise_exception=True):
+            form = PasswordResetForm(data=serializer.data)
+            assert form.is_valid()
+            form.save()
+            data = {}
+        else:
+            data = serializer.validated_data
 
         return Response(data, status=status.HTTP_200_OK)
 
@@ -40,7 +58,7 @@ class ChangePasswordView(APIView):
         serializer = ChangePasswordSerializer(
             data=request.data)
 
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             user.set_password(serializer.data["password"])
             user.save(update_fields=['password'])
             return Response({}, status=status.HTTP_200_OK)
@@ -52,7 +70,7 @@ class ChangePasswordView(APIView):
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
         serializer = LoginSerializer(data=self.request.data)
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             login(request, serializer.validated_data['user'])
             data = {}
         else:

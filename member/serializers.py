@@ -1,10 +1,11 @@
+from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.hashers import make_password
-from django.contrib.auth import authenticate
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import authenticate, get_user_model
+from django.utils.http import urlsafe_base64_decode
 
 from rest_framework.serializers import ValidationError
 from rest_framework import serializers
-
-from django.contrib.auth import get_user_model
 
 
 User = get_user_model()
@@ -25,12 +26,35 @@ class ChangePasswordSerializer(serializers.Serializer):
         return data
 
 
+class ResetChangePasswordSerializer(ChangePasswordSerializer):
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
+
+    def validate(self, data):
+        data = super().validate(data)
+        user_pk = urlsafe_base64_decode(data['uidb64'])
+        user = User.objects.get(pk=user_pk)
+
+        form = SetPasswordForm(
+            user,
+            data={'new_password1': data['password'],
+                  'new_password2': data['password']})
+        if not form.is_valid():
+            raise ValidationError(form.errors)
+
+        if not default_token_generator.check_token(user, data['token']):
+            raise ValidationError({'token': ['Invalid token']})
+
+        data['user_pk'] = user.pk
+        return data
+
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
     def validate(self, data):
-        user = authenticate(data['email'], data['password'])
+        user = authenticate(email=data['email'], password=data['password'])
         if user is None:
             raise ValidationError("Wrong credentials")
         else:
