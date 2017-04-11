@@ -10,6 +10,29 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ResetTests(APITestCase):
+    RESET_PASSWORD_URL = reverse('member:reset_password')
+
+    def setUp(self):
+        self.user = User.objects.create(email="proberto.macedo@gmail.com")
+
+    def test_reset(self):
+        response = self.client.post(
+            self.RESET_PASSWORD_URL,
+            {'email': self.user.email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {})
+        self.assertFalse(
+            User.objects.get(pk=self.user.pk).has_usable_password())
+
+    def test_reset_unexistent_email(self):
+        response = self.client.post(
+            self.RESET_PASSWORD_URL,
+            {'email': "foobar@invalid.com"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {})
+
+
 class PasswordTests(APITestCase):
     CHANGE_PASSWORD_URL = reverse('member:change_password')
     RESET_PASSWORD_URL = reverse('member:change_password')
@@ -42,13 +65,6 @@ class PasswordTests(APITestCase):
             {'detail': 'Authentication credentials were not provided.'})
 
     # def test_reset_needs_authentication(self):
-    #     user = User.objects.create(email="proberto.macedo@gmail.com")
-    #     url = reverse("member:verify", args=(user.pk, ))
-    #     response = self.client.put(url)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     self.assertEqual(response.data, {'verified': True})
-
-    # def test_reset(self):
     #     user = User.objects.create(email="proberto.macedo@gmail.com")
     #     url = reverse("member:verify", args=(user.pk, ))
     #     response = self.client.put(url)

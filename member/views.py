@@ -5,13 +5,28 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics, status
 
+from .forms import PasswordResetForm
 from .serializers import UserSerializer, UserVerifySerializer, \
-    ChangePasswordSerializer, LoginSerializer
+    ChangePasswordSerializer, LoginSerializer, ResetSerializer
 
 from django.contrib.auth import get_user_model
 
 
 User = get_user_model()
+
+
+class ResetView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = ResetSerializer(data=self.request.data)
+        if serializer.is_valid():
+            form = PasswordResetForm(data=serializer.data)
+            form.is_valid()
+            form.save()
+            data = {}
+        else:
+            data = serializer.data
+
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class ChangePasswordView(APIView):

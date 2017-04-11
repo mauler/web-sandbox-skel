@@ -10,6 +10,10 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+class ResetSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     password = serializers.CharField()
     repeat_password = serializers.CharField()

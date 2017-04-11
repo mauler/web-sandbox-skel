@@ -1,9 +1,14 @@
 from django.conf.urls import url
 
-from .views import UserCreateView, VerifyView, ChangePasswordView, LoginView
+from .views import UserCreateView, VerifyView, ChangePasswordView, LoginView, \
+    ResetView
 
 
 urlpatterns = [
+
+    url(r'^reset$',
+        ResetView.as_view(),
+        name='reset_password'),
 
     url(r'^login$',
         LoginView.as_view(),
