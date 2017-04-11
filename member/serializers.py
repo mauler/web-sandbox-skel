@@ -7,8 +7,15 @@ from django.utils.http import urlsafe_base64_decode
 from rest_framework.serializers import ValidationError
 from rest_framework import serializers
 
+from .models import Team
 
 User = get_user_model()
+
+
+class TeamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Team
+        fields = ("name", )
 
 
 class ResetSerializer(serializers.Serializer):

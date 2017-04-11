@@ -1,18 +1,43 @@
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth import login, get_user_model
+from django.shortcuts import get_object_or_404
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 from rest_framework.views import APIView
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 
+from .models import Team
 from .forms import PasswordResetForm
 from .serializers import UserSerializer, UserVerifySerializer, \
     ChangePasswordSerializer, LoginSerializer, ResetSerializer, \
-    ResetChangePasswordSerializer
+    ResetChangePasswordSerializer, TeamSerializer
 
 
 User = get_user_model()
+
+
+class TeamViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated, )
+    serializer_class = TeamSerializer
+    queryset = Team.objects.all()
+
+    def post(self, request, pk=None):
+        if request.user.team is not None:
+            raise ValidationError("User already have a team.")
+
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            team = serializer.save()
+            request.user.team = team
+            request.user.save(update_fields=['team'])
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        team = get_object_or_404(Team, members=request.user)
+        serializer = self.serializer_class(team)
+        return Response(serializer.data)
 
 
 class ResetChangePasswordView(APIView):

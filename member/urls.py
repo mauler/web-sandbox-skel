@@ -1,10 +1,14 @@
 from django.conf.urls import url
 
 from .views import UserCreateView, VerifyView, ChangePasswordView, LoginView, \
-    ResetView, ResetChangePasswordView
+    ResetView, ResetChangePasswordView, TeamViewSet
 
 
 urlpatterns = [
+
+    url(r'^team$',
+        TeamViewSet.as_view({"get": "retrieve", "post": "post"}),
+        name='team'),
 
     url(r'^reset/change-password$',
         ResetChangePasswordView.as_view(),

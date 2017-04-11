@@ -9,8 +9,41 @@ from rest_framework import status
 
 from django.contrib.auth import get_user_model
 
+from member.models import Team
 
 User = get_user_model()
+
+
+class TeamTests(APITestCase):
+    TEAM_URL = reverse('member:team')
+
+    def setUp(self):
+        self.team = Team.objects.create(name="Dummy Team")
+        self.user = User.objects.create(email="proberto.macedo@gmail.com",
+                                        verified=True)
+
+    def test_unauthorized(self):
+        response = self.client.post(self.TEAM_URL)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_no_team(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.TEAM_URL)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_team(self):
+        self.client.force_login(self.user)
+        self.user.team = self.team
+        self.user.save(update_fields=['team'])
+
+        response = self.client.get(self.TEAM_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_create_team(self):
+        self.client.force_login(self.user)
+        response = self.client.post(self.TEAM_URL, {'name': "My Team"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'name': "My Team"})
 
 
 class ResetChangePasswordTests(APITestCase):
