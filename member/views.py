@@ -1,6 +1,8 @@
 from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth import login, get_user_model
 from django.shortcuts import get_object_or_404
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -16,6 +18,17 @@ from .serializers import UserSerializer, UserVerifySerializer, \
 
 
 User = get_user_model()
+
+
+class InviteView(APIView):
+    permission_classes = (IsAuthenticated, )
+
+    def get(self, request, *args, **kwargs):
+        uidb64 = urlsafe_base64_encode(force_bytes(request.user.pk)).decode()
+        data = {
+            'invite_code': uidb64,
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class TeamViewSet(viewsets.ModelViewSet):

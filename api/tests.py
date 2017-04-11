@@ -14,6 +14,53 @@ from member.models import Team
 User = get_user_model()
 
 
+class InviteTests(APITestCase):
+    INVITE_URL = reverse('member:invite')
+    REGISTER_URL = reverse('member:register')
+
+    def setUp(self):
+        self.team = Team.objects.create(name="Dummy Team")
+        self.user = User.objects.create(email="proberto.macedo@gmail.com",
+                                        verified=True)
+
+    def test_unauthorized(self):
+        response = self.client.post(self.INVITE_URL)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_invite_workflow(self):
+        self.client.force_login(self.user)
+        response = self.client.get(self.INVITE_URL)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('invite_code', response.data)
+
+        self.client.logout()
+        response = self.client.post(
+            self.REGISTER_URL,
+            data={
+                'invite_code': response.data['invite_code'],
+                'email': "invited@user.com",
+                'first_name': "invited",
+                'last_name': "user",
+                'password': 'pwdz1234',
+                'repeat_password': 'pwdz1234'})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['team'], {'name': 'Dummy Team'})
+        self.assertIsNotNone(User.objects.get(email="invited@user.com").team)
+
+    def test_invalid_invite_code(self):
+        response = self.client.post(
+            self.REGISTER_URL,
+            data={
+                'invite_code': '666',
+                'email': "invited@user.com",
+                'first_name': "invited",
+                'last_name': "user",
+                'password': 'pwdz1234',
+                'repeat_password': 'pwdz1234'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'invite_code': ['Invalid invite code.']})
+
+
 class TeamTests(APITestCase):
     TEAM_URL = reverse('member:team')
 
@@ -198,7 +245,8 @@ class RegisterTests(APITestCase):
             response.data,
             {'email': 'proberto.macedo@gmail.com',
              'first_name': 'Paulo',
-             'last_name': 'Developer'})
+             'last_name': 'Developer',
+             'team': None})
 
         qs = User.objects.all()
         self.assertQuerysetEqual(qs, ['<User: proberto.macedo@gmail.com>'])

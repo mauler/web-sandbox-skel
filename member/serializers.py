@@ -86,6 +86,11 @@ class UserSerializer(serializers.ModelSerializer):
     repeat_password = serializers.CharField(max_length=128,
                                             write_only=True)
 
+    invite_code = serializers.CharField(write_only=True,
+                                        required=False,
+                                        allow_null=True)
+    team = TeamSerializer(required=False)
+
     class Meta:
         model = User
         fields = (
@@ -94,15 +99,32 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'password',
             'repeat_password',
+            'team',
+            'invite_code',
         )
         extra_kwargs = {
             'password': {'write_only': True},
         }
+
+    def validate_invite_code(self, value):
+        try:
+            user_pk = urlsafe_base64_decode(value)
+            qs = User.objects.filter(pk=user_pk)
+        except ValueError:
+            # return None
+            raise ValidationError("Invalid invite code.")
+        else:
+            if not qs.exists():
+                raise ValidationError("Invalid invite code.")
+            return int(user_pk)
+
+        return value
 
     def validate(self, data):
         if data['repeat_password'] != data['password']:
             raise ValidationError(
                 {'repeat_password': "Repeated password doesn't match."})
         data.pop('repeat_password')
+        data['team_id'] = data.pop('invite_code', None)
         data['password'] = make_password(data['password'])
         return data
